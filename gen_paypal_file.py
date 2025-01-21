@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from io import StringIO
+from io import BytesIO
 
 # Titre de l'application
 st.title("Générateur d'écritures PayPal")
@@ -78,7 +78,7 @@ if generate_button and paypal_file and export_file:
         "Libellé", "Montant", "Sens", "D.Eché", "Paiement", "TVA", "Devise", "Post analytique"
     ]
     output_df = pd.DataFrame(lines, columns=columns)
-    output_csv = StringIO()
+    output_csv = BytesIO()
     output_df.to_csv(output_csv, sep=";", index=False, encoding="utf-8-sig")
     output_csv.seek(0)
 
@@ -86,7 +86,7 @@ if generate_button and paypal_file and export_file:
     inconnues_csv = None
     if inconnues:
         inconnues_df = pd.DataFrame(inconnues)
-        inconnues_csv = StringIO()
+        inconnues_csv = BytesIO()
         inconnues_df.to_csv(inconnues_csv, sep=";", index=False, encoding="utf-8-sig")
         inconnues_csv.seek(0)
 
