@@ -7,13 +7,20 @@ st.title("Générateur d'écritures PayPal")
 
 # Fonction pour réinitialiser l'application
 def reset_app():
+    st.session_state.clear()
     st.experimental_rerun()
 
 # Ajouter un bouton pour réinitialiser la page
 if st.button("Réinitialiser la page"):
     reset_app()
 
-# Chargement des fichiers au centre
+# Initialiser les fichiers générés dans session_state
+if "output_csv" not in st.session_state:
+    st.session_state["output_csv"] = None
+if "inconnues_csv" not in st.session_state:
+    st.session_state["inconnues_csv"] = None
+
+# Chargement des fichiers
 st.header("Chargement des fichiers")
 paypal_file = st.file_uploader("Importer le fichier PayPal (CSV)", type=["csv"])
 export_file = st.file_uploader("Importer le fichier Export (XLSX)", type=["xlsx"])
@@ -99,17 +106,22 @@ if generate_button and paypal_file and export_file:
         inconnues_csv.write(b"Aucune commande inconnue")
     inconnues_csv.seek(0)
 
-    # Téléchargement des fichiers individuellement
+    # Stocker les fichiers dans session_state
+    st.session_state["output_csv"] = output_csv
+    st.session_state["inconnues_csv"] = inconnues_csv
+
+# Afficher les boutons de téléchargement uniquement si les fichiers sont disponibles
+if st.session_state["output_csv"] and st.session_state["inconnues_csv"]:
     st.header("Téléchargement des fichiers")
     st.download_button(
         label="Télécharger le fichier des écritures",
-        data=output_csv,
+        data=st.session_state["output_csv"],
         file_name="ECRITURES.csv",
         mime="text/csv"
     )
     st.download_button(
         label="Télécharger les commandes inconnues",
-        data=inconnues_csv,
+        data=st.session_state["inconnues_csv"],
         file_name="commandes_inconnues.csv",
         mime="text/csv"
     )
