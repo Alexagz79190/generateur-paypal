@@ -2,22 +2,26 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
+# Fonction de callback pour la connexion
+def login_callback():
+    if st.session_state.username == "admin" and st.session_state.password == "password":
+        st.session_state.authenticated = True
+    else:
+        st.session_state.authenticated = False
+        st.error("Nom d'utilisateur ou mot de passe incorrect")
+
 # Page de connexion
 def login_page():
     st.title("Connexion")
-    username = st.text_input("Nom d'utilisateur")
-    password = st.text_input("Mot de passe", type="password")
-    if st.button("Se connecter"):
-        if username == "admin" and password == "password":  # Remplacez par vos identifiants réels
-            st.session_state["authenticated"] = True
-        else:
-            st.error("Nom d'utilisateur ou mot de passe incorrect")
+    st.text_input("Nom d'utilisateur", key="username")
+    st.text_input("Mot de passe", type="password", key="password")
+    st.button("Se connecter", on_click=login_callback)
 
 # Vérification de l'authentification
 if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
+    st.session_state.authenticated = False
 
-if not st.session_state["authenticated"]:
+if not st.session_state.authenticated:
     login_page()
 else:
     # Titre de l'application
