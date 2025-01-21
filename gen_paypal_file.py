@@ -5,6 +5,14 @@ from io import BytesIO
 # Titre de l'application
 st.title("Générateur d'écritures PayPal")
 
+# Fonction pour réinitialiser l'application
+def reset_app():
+    st.experimental_rerun()
+
+# Ajouter un bouton pour réinitialiser la page
+if st.button("Réinitialiser la page"):
+    reset_app()
+
 # Chargement des fichiers au centre
 st.header("Chargement des fichiers")
 paypal_file = st.file_uploader("Importer le fichier PayPal (CSV)", type=["csv"])
