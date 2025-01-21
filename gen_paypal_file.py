@@ -8,8 +8,9 @@ def login_page():
     username = st.text_input("Nom d'utilisateur")
     password = st.text_input("Mot de passe", type="password")
     if st.button("Se connecter"):
-        if username == "paypal.aprolia" and password == "2025#Aprolia79!":  
+        if username == "paypal.aprolia" and password == "2025#Aprolia79!":  # Remplacez par vos identifiants réels
             st.session_state["authenticated"] = True
+            st.experimental_rerun()  # Recharger immédiatement la page après authentification
         else:
             st.error("Nom d'utilisateur ou mot de passe incorrect")
 
@@ -23,9 +24,10 @@ else:
     # Titre de l'application
     st.title("Générateur d'écritures PayPal")
 
-    # Ajouter un bouton pour réinitialiser la page
-    if st.button("Réinitialiser la page"):
-        reset_app()
+    # Fonction pour réinitialiser l'application
+    def reset_app():
+        st.session_state.clear()
+        st.experimental_rerun()
 
     # Initialiser les fichiers générés dans session_state
     if "output_csv" not in st.session_state:
