@@ -10,10 +10,6 @@ def reset_app():
     st.session_state.clear()
     st.experimental_rerun()
 
-# Ajouter un bouton pour réinitialiser la page
-if st.button("Réinitialiser la page"):
-    reset_app()
-
 # Initialiser les fichiers générés dans session_state
 if "output_csv" not in st.session_state:
     st.session_state["output_csv"] = None
