@@ -8,9 +8,8 @@ def login_page():
     username = st.text_input("Nom d'utilisateur")
     password = st.text_input("Mot de passe", type="password")
     if st.button("Se connecter"):
-        if username == "aprolia79" and password == "Aprolia79!":  # Remplacez par vos identifiants réels
+        if username == "admin" and password == "password":  # Remplacez par vos identifiants réels
             st.session_state["authenticated"] = True
-            st.experimental_rerun()
         else:
             st.error("Nom d'utilisateur ou mot de passe incorrect")
 
@@ -27,7 +26,6 @@ else:
     # Fonction pour réinitialiser l'application
     def reset_app():
         st.session_state.clear()
-        st.experimental_rerun()
 
     # Ajouter un bouton pour réinitialiser la page
     if st.button("Réinitialiser la page"):
