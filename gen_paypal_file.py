@@ -16,7 +16,7 @@ def login_page():
 
 # Vérification de l'authentification
 if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = # Removed invalid usage of st.set_query_params.get("authenticated") == ["true"]
+    st.session_state["authenticated"] = False
 
 if not st.session_state["authenticated"]:
     login_page()
