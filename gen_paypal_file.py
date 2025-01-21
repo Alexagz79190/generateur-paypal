@@ -91,25 +91,27 @@ if generate_button and paypal_file and export_file:
     output_csv.seek(0)
 
     # Gérer les commandes inconnues
-    inconnues_csv = None
+    inconnues_csv = BytesIO()
     if inconnues:
         inconnues_df = pd.DataFrame(inconnues)
-        inconnues_csv = BytesIO()
         inconnues_df.to_csv(inconnues_csv, sep=";", index=False, encoding="utf-8-sig")
-        inconnues_csv.seek(0)
+    else:
+        inconnues_csv.write(b"Aucune commande inconnue")
+    inconnues_csv.seek(0)
 
-    # Afficher les boutons de téléchargement
-    st.header("Téléchargement")
+    # Téléchargement unique pour les deux fichiers
+    zip_buffer = BytesIO()
+    import zipfile
+
+    with zipfile.ZipFile(zip_buffer, "w") as zf:
+        zf.writestr("ECRITURES.csv", output_csv.getvalue().decode("utf-8-sig"))
+        zf.writestr("commandes_inconnues.csv", inconnues_csv.getvalue().decode("utf-8-sig"))
+
+    zip_buffer.seek(0)
+
     st.download_button(
-        label="Télécharger le fichier des écritures",
-        data=output_csv,
-        file_name="ECRITURES.csv",
-        mime="text/csv"
+        label="Télécharger les fichiers générés (ZIP)",
+        data=zip_buffer,
+        file_name="fichiers_paypal.zip",
+        mime="application/zip"
     )
-    if inconnues_csv:
-        st.download_button(
-            label="Télécharger les commandes inconnues",
-            data=inconnues_csv,
-            file_name="commandes_inconnues.csv",
-            mime="text/csv"
-        )
