@@ -99,19 +99,17 @@ if generate_button and paypal_file and export_file:
         inconnues_csv.write(b"Aucune commande inconnue")
     inconnues_csv.seek(0)
 
-    # Téléchargement unique pour les deux fichiers
-    zip_buffer = BytesIO()
-    import zipfile
-
-    with zipfile.ZipFile(zip_buffer, "w") as zf:
-        zf.writestr("ECRITURES.csv", output_csv.getvalue().decode("utf-8-sig"))
-        zf.writestr("commandes_inconnues.csv", inconnues_csv.getvalue().decode("utf-8-sig"))
-
-    zip_buffer.seek(0)
-
+    # Téléchargement des fichiers individuellement
+    st.header("Téléchargement des fichiers")
     st.download_button(
-        label="Télécharger les fichiers générés (ZIP)",
-        data=zip_buffer,
-        file_name="fichiers_paypal.zip",
-        mime="application/zip"
+        label="Télécharger le fichier des écritures",
+        data=output_csv,
+        file_name="ECRITURES.csv",
+        mime="text/csv"
+    )
+    st.download_button(
+        label="Télécharger les commandes inconnues",
+        data=inconnues_csv,
+        file_name="commandes_inconnues.csv",
+        mime="text/csv"
     )
