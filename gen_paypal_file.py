@@ -10,13 +10,13 @@ def login_page():
     if st.button("Se connecter"):
         if username == "admin" and password == "password":  # Remplacez par vos identifiants réels
             st.session_state["authenticated"] = True
-            st.experimental_get_query_params()  # Définir un paramètre pour éviter double clic
+            st.get_query_params()  # Définir un paramètre pour éviter double clic
         else:
             st.error("Nom d'utilisateur ou mot de passe incorrect")
 
 # Vérification de l'authentification
 if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = st.experimental_set_query_params().get("authenticated") == ["true"]
+    st.session_state["authenticated"] = st.set_query_params().get("authenticated") == ["true"]
 
 if not st.session_state["authenticated"]:
     login_page()
