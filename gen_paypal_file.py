@@ -10,7 +10,7 @@ def login_page():
     if st.button("Se connecter"):
         if username == "paypal.aprolia" and password == "2025#Aprolia79!":  # Remplacez par vos identifiants réels
             st.session_state["authenticated"] = True
-            st.query_params(authenticated="true")  # Définir un paramètre pour éviter double clic
+            st.experimental_get_query_params()  # Définir un paramètre pour éviter double clic
         else:
             st.error("Nom d'utilisateur ou mot de passe incorrect")
 
