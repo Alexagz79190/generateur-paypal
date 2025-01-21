@@ -4,10 +4,13 @@ import pandas as pd
 # Titre de l'application
 st.title("Générateur d'écritures PayPal")
 
-# Chargement des fichiers
-st.sidebar.header("Chargement des fichiers")
-paypal_file = st.sidebar.file_uploader("Importer le fichier PayPal (CSV)", type=["csv"])
-export_file = st.sidebar.file_uploader("Importer le fichier Export (XLSX)", type=["xlsx"])
+# Chargement des fichiers au centre
+st.header("Chargement des fichiers")
+col1, col2 = st.columns(2)
+with col1:
+    paypal_file = st.file_uploader("Importer le fichier de PayPal (CSV)", type=["csv"])
+with col2:
+    export_file = st.file_uploader("Importer le fichier Export client (XLSX)", type=["xlsx"])
 
 if paypal_file and export_file:
     # Lire les données
@@ -77,8 +80,8 @@ if paypal_file and export_file:
     output_df = pd.DataFrame(lines, columns=columns)
 
     # Téléchargement du fichier d'écritures
-    st.sidebar.header("Téléchargement")
-    st.sidebar.download_button(
+    st.header("Téléchargement")
+    st.download_button(
         label="Télécharger le fichier des écritures",
         data=output_df.to_csv(sep=";", index=False, encoding="utf-8-sig"),
         file_name="ECRITURES.csv",
@@ -88,7 +91,7 @@ if paypal_file and export_file:
     # Gérer les commandes inconnues
     if inconnues:
         inconnues_df = pd.DataFrame(inconnues)
-        st.sidebar.download_button(
+        st.download_button(
             label="Télécharger les commandes inconnues",
             data=inconnues_df.to_csv(sep=";", index=False, encoding="utf-8-sig"),
             file_name="commandes_inconnues.csv",
