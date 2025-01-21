@@ -4,7 +4,7 @@ from io import BytesIO
 
 # Fonction de callback pour la connexion
 def login_callback():
-    if st.session_state.username == "admin" and st.session_state.password == "password":
+    if st.session_state.username == "paypal.aprolia" and st.session_state.password == "2025#Aprolia79!":
         st.session_state.authenticated = True
     else:
         st.session_state.authenticated = False
