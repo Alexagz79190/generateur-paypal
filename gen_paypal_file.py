@@ -10,13 +10,13 @@ def login_page():
     if st.button("Se connecter"):
         if username == "paypal.aprolia" and password == "2025#Aprolia79!":  # Remplacez par vos identifiants réels
             st.session_state["authenticated"] = True
-            st.experimental_set_query_params(authenticated="true")  # Définir un paramètre pour éviter double clic
+            st.query_params(authenticated="true")  # Définir un paramètre pour éviter double clic
         else:
             st.error("Nom d'utilisateur ou mot de passe incorrect")
 
 # Vérification de l'authentification
 if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = st.experimental_get_query_params().get("authenticated") == ["true"]
+    st.session_state["authenticated"] = st.query_params().get("authenticated") == ["true"]
 
 if not st.session_state["authenticated"]:
     login_page()
@@ -29,9 +29,6 @@ else:
         st.session_state.clear()
         st.experimental_set_query_params()  # Supprimer les paramètres d'URL
 
-    # Ajouter un bouton pour réinitialiser la page
-    if st.button("Réinitialiser la page"):
-        reset_app()
 
     # Initialiser les fichiers générés dans session_state
     if "output_csv" not in st.session_state:
