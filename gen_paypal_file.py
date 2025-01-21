@@ -6,13 +6,12 @@ st.title("Générateur d'écritures PayPal")
 
 # Chargement des fichiers au centre
 st.header("Chargement des fichiers")
-col1, col2 = st.columns(2)
-with col1:
-    paypal_file = st.file_uploader("Importer le fichier de PayPal (CSV)", type=["csv"])
-with col2:
-    export_file = st.file_uploader("Importer le fichier Export client (XLSX)", type=["xlsx"])
+paypal_file = st.file_uploader("Importer le fichier PayPal (CSV)", type=["csv"])
+export_file = st.file_uploader("Importer le fichier Export (XLSX)", type=["xlsx"])
 
-if paypal_file and export_file:
+generate_button = st.button("Générer les fichiers")
+
+if generate_button and paypal_file and export_file:
     # Lire les données
     paypal_data = pd.read_csv(paypal_file, sep=",", dtype=str)
     export_data = pd.read_excel(export_file, dtype=str, skiprows=1)  # Ignorer la première ligne
