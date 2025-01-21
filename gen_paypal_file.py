@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from io import StringIO
 
 # Titre de l'application
 st.title("Générateur d'écritures PayPal")
@@ -77,22 +78,30 @@ if generate_button and paypal_file and export_file:
         "Libellé", "Montant", "Sens", "D.Eché", "Paiement", "TVA", "Devise", "Post analytique"
     ]
     output_df = pd.DataFrame(lines, columns=columns)
+    output_csv = StringIO()
+    output_df.to_csv(output_csv, sep=";", index=False, encoding="utf-8-sig")
+    output_csv.seek(0)
 
-    # Téléchargement du fichier d'écritures
+    # Gérer les commandes inconnues
+    inconnues_csv = None
+    if inconnues:
+        inconnues_df = pd.DataFrame(inconnues)
+        inconnues_csv = StringIO()
+        inconnues_df.to_csv(inconnues_csv, sep=";", index=False, encoding="utf-8-sig")
+        inconnues_csv.seek(0)
+
+    # Afficher les boutons de téléchargement
     st.header("Téléchargement")
     st.download_button(
         label="Télécharger le fichier des écritures",
-        data=output_df.to_csv(sep=";", index=False, encoding="utf-8-sig"),
+        data=output_csv,
         file_name="ECRITURES.csv",
         mime="text/csv"
     )
-
-    # Gérer les commandes inconnues
-    if inconnues:
-        inconnues_df = pd.DataFrame(inconnues)
+    if inconnues_csv:
         st.download_button(
             label="Télécharger les commandes inconnues",
-            data=inconnues_df.to_csv(sep=";", index=False, encoding="utf-8-sig"),
+            data=inconnues_csv,
             file_name="commandes_inconnues.csv",
             mime="text/csv"
         )
