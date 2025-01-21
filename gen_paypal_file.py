@@ -10,12 +10,13 @@ def login_page():
     if st.button("Se connecter"):
         if username == "admin" and password == "password":  # Remplacez par vos identifiants réels
             st.session_state["authenticated"] = True
+            st.get_query_params()  # Définir un paramètre pour éviter double clic
         else:
             st.error("Nom d'utilisateur ou mot de passe incorrect")
 
 # Vérification de l'authentification
 if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
+    st.session_state["authenticated"] = st.set_query_params().get("authenticated") == ["true"]
 
 if not st.session_state["authenticated"]:
     login_page()
@@ -26,6 +27,7 @@ else:
     # Fonction pour réinitialiser l'application
     def reset_app():
         st.session_state.clear()
+        st.experimental_set_query_params()  # Supprimer les paramètres d'URL
 
     # Ajouter un bouton pour réinitialiser la page
     if st.button("Réinitialiser la page"):
