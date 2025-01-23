@@ -70,8 +70,8 @@ else:
             # Trouver le compte dans le fichier export
             reference_facture = row['Numéro de facture']
             compte_row = export_data[export_data['N° commande'] == reference_facture]
-            if not compte_row.empty and compte_row['N° client'].values[0] and compte_row['N° client'].values[0] != "0":
-                compte = compte_row['N° client'].values[0]
+            if not compte_row.empty and compte_row['Code Mistral'].values[0] and compte_row['Code Mistral'].values[0] != "0":
+                compte = compte_row['Code Mistral'].values[0]
             else:
                 compte = "1"
                 inconnues.append(row)
