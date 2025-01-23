@@ -46,26 +46,26 @@ else:
     generate_button = st.button("Générer les fichiers")
 
     if generate_button and paypal_file and export_file:
-    # Lire les données
-    paypal_data = pd.read_csv(paypal_file, sep=",", dtype=str)
+        # Lire les données
+        paypal_data = pd.read_csv(paypal_file, sep=",", dtype=str)
 
-    # Appliquer le filtre sur le Type
-    paypal_data = paypal_data[paypal_data['Type'] == 'Paiement Express Checkout']
+        # Appliquer le filtre sur le Type
+        paypal_data = paypal_data[paypal_data['Type'] == 'Paiement Express Checkout']
 
-    export_data = pd.read_excel(export_file, dtype=str, skiprows=1)  # Ignorer la première ligne
+        export_data = pd.read_excel(export_file, dtype=str, skiprows=1)  # Ignorer la première ligne
 
-    # Convertir les montants avec des virgules en points
-    paypal_data['Avant commission'] = paypal_data['Avant commission'].str.replace(",", ".").astype(float)
-    paypal_data['Commission'] = paypal_data['Commission'].str.replace(",", ".").astype(float)
-    paypal_data['Net'] = paypal_data['Net'].str.replace(",", ".").astype(float)
+        # Convertir les montants avec des virgules en points
+        paypal_data['Avant commission'] = paypal_data['Avant commission'].str.replace(",", ".").astype(float)
+        paypal_data['Commission'] = paypal_data['Commission'].str.replace(",", ".").astype(float)
+        paypal_data['Net'] = paypal_data['Net'].str.replace(",", ".").astype(float)
 
-    # Vérifier si le DataFrame filtré n'est pas vide
-    if paypal_data.empty:
-        st.error("Aucune transaction de type 'Paiement Express Checkout' trouvée dans le fichier PayPal.")
-    else:
-        # Initialiser les listes pour construire les lignes
-        lines = []
-        inconnues = []
+        # Vérifier si le DataFrame filtré n'est pas vide
+        if paypal_data.empty:
+            st.error("Aucune transaction de type 'Paiement Express Checkout' trouvée dans le fichier PayPal.")
+        else:
+            # Initialiser les listes pour construire les lignes
+            lines = []
+            inconnues = []
 
         # Mapper les colonnes nécessaires entre les deux fichiers
         for index, row in paypal_data.iterrows():
