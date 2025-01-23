@@ -45,40 +45,26 @@ else:
 
     generate_button = st.button("Générer les fichiers")
 
-if generate_button and paypal_file and export_file:
-    # Lire les données
-    paypal_data = pd.read_csv(paypal_file, sep=",", dtype=str)
+    if generate_button and paypal_file and export_file:
+        # Lire les données
+        paypal_data = pd.read_csv(paypal_file, sep=",", dtype=str)
 
-    # Filtrer uniquement les lignes où 'Type' est égal à 'Paiement Express Checkout'
-    paypal_data = paypal_data[paypal_data['Type'] == 'Paiement Express Checkout']
+        # Filtrer uniquement les lignes où 'Type' est égal à 'Paiement Express Checkout'
+        paypal_data = paypal_data[paypal_data['Type'] == 'Paiement Express Checkout']
 
-    if paypal_data.empty:
-        st.error("Aucune transaction de type 'Paiement Express Checkout' trouvée dans le fichier PayPal.")
-    else:
-        export_data = pd.read_excel(export_file, dtype=str, skiprows=1)  # Ignorer la première ligne
-
-        # Nettoyer et convertir les colonnes numériques
-        paypal_data['Avant commission'] = paypal_data['Avant commission'].astype(str).str.replace("\xa0", "", regex=False).str.replace(",", ".", regex=False)
-        paypal_data['Avant commission'] = pd.to_numeric(paypal_data['Avant commission'], errors='coerce').fillna(0)
-
-        paypal_data['Commission'] = paypal_data['Commission'].astype(str).str.replace("\xa0", "", regex=False).str.replace(",", ".", regex=False)
-        paypal_data['Commission'] = pd.to_numeric(paypal_data['Commission'], errors='coerce').fillna(0)
-
-        paypal_data['Net'] = paypal_data['Net'].astype(str).str.replace("\xa0", "", regex=False).str.replace(",", ".", regex=False)
-        paypal_data['Net'] = pd.to_numeric(paypal_data['Net'], errors='coerce').fillna(0)
-
-       
-
-        # Vérifier si le DataFrame n'est pas vide après le filtrage
         if paypal_data.empty:
             st.error("Aucune transaction de type 'Paiement Express Checkout' trouvée dans le fichier PayPal.")
         else:
             export_data = pd.read_excel(export_file, dtype=str, skiprows=1)  # Ignorer la première ligne
 
-            # Convertir les montants avec des virgules en points
-            paypal_data['Avant commission'] = paypal_data['Avant commission'].str.replace(",", ".", regex=False).astype(float)
-            paypal_data['Commission'] = paypal_data['Commission'].str.replace(",", ".", regex=False).astype(float)
-            paypal_data['Net'] = paypal_data['Net'].str.replace(",", ".", regex=False).astype(float)
+            # Colonnes à nettoyer
+            columns_to_clean = ['Avant commission', 'Commission', 'Net']
+
+            # Nettoyer et convertir les colonnes en format numérique
+            for col in columns_to_clean:
+                paypal_data[col] = paypal_data[col].astype(str).str.replace("\xa0", "", regex=False)  # Supprime les espaces insécables
+                paypal_data[col] = paypal_data[col].str.replace(",", ".", regex=False)  # Remplace les virgules par des points
+                paypal_data[col] = pd.to_numeric(paypal_data[col], errors='coerce').fillna(0)  # Convertit en float et remplace NaN par 0
 
             # Initialiser les listes pour construire les lignes
             lines = []
