@@ -112,7 +112,7 @@ else:
         ]
         output_df = pd.DataFrame(lines, columns=columns)
         output_csv = BytesIO()
-        output_df.to_csv(output_csv, sep=";", index=False, encoding="utf-8-sig")
+        output_df.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
         output_csv.seek(0)
 
         # Gérer les commandes inconnues
