@@ -58,16 +58,16 @@ if generate_button and paypal_file and export_file:
         export_data = pd.read_excel(export_file, dtype=str, skiprows=1)  # Ignorer la première ligne
 
         # Nettoyer et convertir les colonnes numériques
-        paypal_data['Avant commission'] = paypal_data['Avant commission'].str.replace("\xa0", "", regex=False).str.replace(",", ".", regex=False)
+        paypal_data['Avant commission'] = paypal_data['Avant commission'].astype(str).str.replace("\xa0", "", regex=False).str.replace(",", ".", regex=False)
         paypal_data['Avant commission'] = pd.to_numeric(paypal_data['Avant commission'], errors='coerce').fillna(0)
 
-        paypal_data['Commission'] = paypal_data['Commission'].str.replace("\xa0", "", regex=False).str.replace(",", ".", regex=False)
+        paypal_data['Commission'] = paypal_data['Commission'].astype(str).str.replace("\xa0", "", regex=False).str.replace(",", ".", regex=False)
         paypal_data['Commission'] = pd.to_numeric(paypal_data['Commission'], errors='coerce').fillna(0)
 
-        paypal_data['Net'] = paypal_data['Net'].str.replace("\xa0", "", regex=False).str.replace(",", ".", regex=False)
+        paypal_data['Net'] = paypal_data['Net'].astype(str).str.replace("\xa0", "", regex=False).str.replace(",", ".", regex=False)
         paypal_data['Net'] = pd.to_numeric(paypal_data['Net'], errors='coerce').fillna(0)
 
-        # Continuer le traitement...
+       
 
         # Vérifier si le DataFrame n'est pas vide après le filtrage
         if paypal_data.empty:
