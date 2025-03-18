@@ -27,17 +27,6 @@ else:
     # Titre de l'application
     st.title("Générateur d'écritures PayPal")
 
-    # Fonction pour réinitialiser l'application
-    def reset_app():
-        st.session_state.clear()
-        st.experimental_set_query_params()  # Supprimer les paramètres d'URL
-
-    # Initialiser les fichiers générés dans session_state
-    if "output_csv" not in st.session_state:
-        st.session_state["output_csv"] = None
-    if "inconnues_csv" not in st.session_state:
-        st.session_state["inconnues_csv"] = None
-
     # Chargement des fichiers
     st.header("Chargement des fichiers")
     paypal_file = st.file_uploader("Importer le fichier PayPal (CSV)", type=["csv"])
@@ -78,15 +67,27 @@ else:
                 piece = ""
                 ligne = str(index + 1)  # N° ligne (indentation)
                 type_cpt = "C"
+
+                # ---- NOUVEAU CONTRÔLE ----
+                reference_facture = ""
+                if pd.notna(row['Numéro de client']) and row['Numéro de client'].strip() != "":
+                    # Extraire le numéro après '--' dans la colonne 'Titre de l'objet'
+                    titre_objet = row.get('Titre de l\'objet', '')
+                    if '--' in titre_objet:
+                        reference_facture = titre_objet.split('--')[-1].strip()
+                else:
+                    # Utiliser la colonne "Numéro de facture" si pas de client
+                    reference_facture = row['Numéro de facture']
+
                 # Trouver le compte dans le fichier export
-                reference_facture = row['Numéro de facture']
                 compte_row = export_data[export_data['N° commande'] == reference_facture]
                 if not compte_row.empty and compte_row['Code Mistral'].values[0] and compte_row['Code Mistral'].values[0] != "0":
                     compte = compte_row['Code Mistral'].values[0]
                 else:
                     compte = "1"
                     inconnues.append(row)
-                reference = reference_facture  # Numéro de facture fichier Paypal
+
+                reference = reference_facture  # Numéro de commande
                 libelle = f"Règlement {row['Nom'].upper()}"  # Concaténation avec Nom en majuscules
                 montant = f"{row['Avant commission']:.2f}".replace(".", ",")  # Format en virgule
                 sens = "C"
@@ -142,15 +143,5 @@ else:
     # Afficher les boutons de téléchargement uniquement si les fichiers sont disponibles
     if st.session_state["output_csv"] and st.session_state["inconnues_csv"]:
         st.header("Téléchargement des fichiers")
-        st.download_button(
-            label="Télécharger le fichier des écritures",
-            data=st.session_state["output_csv"],
-            file_name="ECRITURES.csv",
-            mime="text/csv"
-        )
-        st.download_button(
-            label="Télécharger les commandes inconnues",
-            data=st.session_state["inconnues_csv"],
-            file_name="commandes_inconnues.csv",
-            mime="text/csv"
-        )
+        st.download_button("Télécharger le fichier des écritures", data=st.session_state["output_csv"], file_name="ECRITURES.csv", mime="text/csv")
+        st.download_button("Télécharger les commandes inconnues", data=st.session_state["inconnues_csv"], file_name="commandes_inconnues.csv", mime="text/csv")
