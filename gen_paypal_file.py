@@ -141,7 +141,17 @@ else:
             st.session_state["inconnues_csv"] = inconnues_csv
 
     # Afficher les boutons de téléchargement uniquement si les fichiers sont disponibles
-    if st.session_state["output_csv"] and st.session_state["inconnues_csv"]:
-        st.header("Téléchargement des fichiers")
-        st.download_button("Télécharger le fichier des écritures", data=st.session_state["output_csv"], file_name="ECRITURES.csv", mime="text/csv")
-        st.download_button("Télécharger les commandes inconnues", data=st.session_state["inconnues_csv"], file_name="commandes_inconnues.csv", mime="text/csv")
+if "output_csv" in st.session_state and "inconnues_csv" in st.session_state:
+    st.header("Téléchargement des fichiers")
+    st.download_button(
+        "Télécharger le fichier des écritures",
+        data=st.session_state["output_csv"],
+        file_name="ECRITURES.csv",
+        mime="text/csv"
+    )
+    st.download_button(
+        "Télécharger les commandes inconnues",
+        data=st.session_state["inconnues_csv"],
+        file_name="commandes_inconnues.csv",
+        mime="text/csv"
+    )
