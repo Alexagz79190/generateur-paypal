@@ -2,12 +2,19 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-# 🔧 Fonction de nettoyage des chaînes incompatibles avec latin-1
-def clean_latin1(s):
-    """Supprime les caractères non compatibles avec latin-1 (ISO-8859-1)."""
-    if isinstance(s, str):
-        return s.encode("latin-1", errors="ignore").decode("latin-1")
-    return s
+# 🔧 Nettoyage strict pour le latin-1
+def clean_latin1_strict(val):
+    """
+    Nettoie les caractères non compatibles avec latin-1.
+    - Convertit tout en str
+    - Ignore les erreurs d'encodage
+    - Remplace les NaN par chaîne vide
+    """
+    try:
+        val = "" if pd.isna(val) else str(val)
+        return val.encode("latin-1", errors="ignore").decode("latin-1")
+    except Exception:
+        return ""
 
 # Fonction de callback pour la connexion
 def login_callback():
@@ -31,10 +38,8 @@ if "authenticated" not in st.session_state:
 if not st.session_state.authenticated:
     login_page()
 else:
-    # Titre de l'application
     st.title("Générateur d'écritures PayPal")
 
-    # Chargement des fichiers
     st.header("Chargement des fichiers")
     paypal_file = st.file_uploader("Importer le fichier PayPal (CSV)", type=["csv"])
     export_file = st.file_uploader("Importer le fichier Export (XLSX)", type=["xlsx"])
@@ -42,20 +47,15 @@ else:
     generate_button = st.button("Générer les fichiers")
 
     if generate_button and paypal_file and export_file:
-        # Lire les données
         paypal_data = pd.read_csv(paypal_file, sep=",", dtype=str)
-
-        # Filtrer uniquement les lignes où 'Type' est égal à 'Paiement Express Checkout'
         paypal_data = paypal_data[paypal_data['Type'] == 'Paiement Express Checkout']
 
         if paypal_data.empty:
             st.error("Aucune transaction de type 'Paiement Express Checkout' trouvée dans le fichier PayPal.")
         else:
-            export_data = pd.read_excel(export_file, dtype=str, skiprows=1)  # Ignorer la première ligne
+            export_data = pd.read_excel(export_file, dtype=str, skiprows=1)
 
-            # Colonnes à nettoyer
             columns_to_clean = ['Avant commission', 'Commission', 'Net']
-
             for col in columns_to_clean:
                 paypal_data[col] = paypal_data[col].astype(str).str.replace("\xa0", "", regex=False)
                 paypal_data[col] = paypal_data[col].str.replace(",", ".", regex=False)
@@ -102,14 +102,12 @@ else:
                     montant, sens, d_eche, paiement, tva, devise, post_analytique
                 ])
 
-            # Ligne "frais"
             commission_sum = paypal_data['Commission'].sum() * -1
             lines.append([
                 "", "53", date, "", str(len(lines) + 1), "G", "627831", date, "Règlement PAYPAL",
                 f"{commission_sum:.2f}".replace(".", ","), "D", "", "", "", "", ""
             ])
 
-            # Ligne "total"
             net_sum = paypal_data['Net'].sum()
             lines.append([
                 "", "53", date, "", str(len(lines) + 1), "G", "512102", date, "Règlement PAYPAL",
@@ -122,23 +120,20 @@ else:
             ]
             output_df = pd.DataFrame(lines, columns=columns)
 
-            # 🔁 Forcer le DataFrame en chaîne de caractères
-            output_df = output_df.astype(str)
+            # ✅ Nettoyage blindé avant export
+            output_df_cleaned = output_df.applymap(clean_latin1_strict)
 
-            # 🔧 Nettoyer tous les caractères non latin-1
-            output_df = output_df.applymap(clean_latin1)
-
-            # 📝 Export vers CSV (latin-1 sécurisé)
+            # ✅ Écriture du fichier CSV
             output_csv = BytesIO()
             try:
-                output_df.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
+                output_df_cleaned.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
             except UnicodeEncodeError as e:
-                st.error("❌ Une erreur d'encodage a été détectée malgré le nettoyage.")
-                st.text(f"Détail : {e}")
+                st.error("❌ Erreur d'encodage malgré le nettoyage.")
+                st.text(str(e))
                 st.stop()
             output_csv.seek(0)
 
-            # Commandes inconnues
+            # Fichier des commandes inconnues
             inconnues_csv = BytesIO()
             if inconnues:
                 inconnues_df = pd.DataFrame(inconnues)
@@ -147,11 +142,11 @@ else:
                 inconnues_csv.write(b"Aucune commande inconnue")
             inconnues_csv.seek(0)
 
-            # Stockage dans session
+            # Sauvegarde dans la session
             st.session_state["output_csv"] = output_csv
             st.session_state["inconnues_csv"] = inconnues_csv
 
-# Téléchargement
+# Interface de téléchargement
 if "output_csv" in st.session_state and "inconnues_csv" in st.session_state:
     st.header("Téléchargement des fichiers")
     st.download_button(
@@ -166,3 +161,4 @@ if "output_csv" in st.session_state and "inconnues_csv" in st.session_state:
         file_name="commandes_inconnues.csv",
         mime="text/csv"
     )
+
