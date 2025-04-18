@@ -120,6 +120,11 @@ else:
             ]
             output_df = pd.DataFrame(lines, columns=columns)
 
+            # ✅ Nettoyage anti-UnicodeEncodeError avant export
+            output_df_cleaned = output_df.astype(str).applymap(
+                lambda x: x.encode("latin-1", errors="ignore").decode("latin-1")
+            )
+
             # ✅ Nettoyage latin-1 ultra strict en une ligne
             output_df_cleaned = output_df.astype(str).applymap(
                 lambda x: x.encode("latin-1", errors="ignore").decode("latin-1")
