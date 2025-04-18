@@ -2,19 +2,20 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-# 🔧 Nettoyage strict pour le latin-1
-def clean_latin1_strict(val):
-    """
-    Nettoie les caractères non compatibles avec latin-1.
-    - Convertit tout en str
-    - Ignore les erreurs d'encodage
-    - Remplace les NaN par chaîne vide
-    """
-    try:
-        val = "" if pd.isna(val) else str(val)
-        return val.encode("latin-1", errors="ignore").decode("latin-1")
-    except Exception:
-        return ""
+# 🔧 Nettoyage profond anti-UnicodeEncodeError
+def deep_clean_df(df):
+    cleaned_data = []
+    for row in df.itertuples(index=False):
+        cleaned_row = []
+        for val in row:
+            val = "" if pd.isna(val) else str(val)
+            try:
+                val = val.encode("latin-1", errors="ignore").decode("latin-1")
+            except Exception:
+                val = ""
+            cleaned_row.append(val)
+        cleaned_data.append(cleaned_row)
+    return pd.DataFrame(cleaned_data, columns=df.columns)
 
 # Fonction de callback pour la connexion
 def login_callback():
@@ -120,21 +121,13 @@ else:
             ]
             output_df = pd.DataFrame(lines, columns=columns)
 
-            # ✅ Nettoyage anti-UnicodeEncodeError avant export
-            output_df_cleaned = output_df.astype(str).applymap(
-                lambda x: x.encode("latin-1", errors="ignore").decode("latin-1")
-            )
+            # ✅ Nettoyage complet anti-UnicodeEncodeError
+            output_df_cleaned = deep_clean_df(output_df)
 
-            # ✅ Nettoyage latin-1 ultra strict en une ligne
-            output_df_cleaned = output_df.astype(str).applymap(
-                lambda x: x.encode("latin-1", errors="ignore").decode("latin-1")
-            )
-
-            # ✅ Export sans risque vers CSV
+            # ✅ Export CSV latin-1
             output_csv = BytesIO()
             output_df_cleaned.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
             output_csv.seek(0)
-
 
             # Fichier des commandes inconnues
             inconnues_csv = BytesIO()
