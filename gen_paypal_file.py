@@ -120,18 +120,16 @@ else:
             ]
             output_df = pd.DataFrame(lines, columns=columns)
 
-            # ✅ Nettoyage blindé avant export
-            output_df_cleaned = output_df.applymap(clean_latin1_strict)
+            # ✅ Nettoyage latin-1 ultra strict en une ligne
+            output_df_cleaned = output_df.astype(str).applymap(
+                lambda x: x.encode("latin-1", errors="ignore").decode("latin-1")
+            )
 
-            # ✅ Écriture du fichier CSV
+            # ✅ Export sans risque vers CSV
             output_csv = BytesIO()
-            try:
-                output_df_cleaned.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
-            except UnicodeEncodeError as e:
-                st.error("❌ Erreur d'encodage malgré le nettoyage.")
-                st.text(str(e))
-                st.stop()
+            output_df_cleaned.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
             output_csv.seek(0)
+
 
             # Fichier des commandes inconnues
             inconnues_csv = BytesIO()
