@@ -127,6 +127,10 @@ else:
             ]
             output_df = pd.DataFrame(lines, columns=columns)
 
+            # ✅ Remplacement universel de tous les caractères problématiques dans output_df
+            output_df = output_df.astype(str).replace({'Ė': 'E'}, regex=True)
+
+
            # Tu viens de créer output_df ici
             output_df = pd.DataFrame(lines, columns=columns)
 
