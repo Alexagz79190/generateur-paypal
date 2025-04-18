@@ -2,13 +2,6 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-# 🔧 Fonction de nettoyage des chaînes incompatibles avec latin-1
-def clean_latin1(s):
-    """Supprime les caractères non compatibles avec latin-1 (ISO-8859-1)."""
-    if isinstance(s, str):
-        return s.encode("latin-1", errors="ignore").decode("latin-1")
-    return s
-
 # Fonction de callback pour la connexion
 def login_callback():
     if st.session_state.username == "paypal.aprolia" and st.session_state.password == "2025#Aprolia79!":
@@ -56,30 +49,37 @@ else:
             # Colonnes à nettoyer
             columns_to_clean = ['Avant commission', 'Commission', 'Net']
 
+            # Nettoyer et convertir les colonnes en format numérique
             for col in columns_to_clean:
-                paypal_data[col] = paypal_data[col].astype(str).str.replace("\xa0", "", regex=False)
-                paypal_data[col] = paypal_data[col].str.replace(",", ".", regex=False)
-                paypal_data[col] = pd.to_numeric(paypal_data[col], errors='coerce').fillna(0)
+                paypal_data[col] = paypal_data[col].astype(str).str.replace("\xa0", "", regex=False)  # Supprime les espaces insécables
+                paypal_data[col] = paypal_data[col].str.replace(",", ".", regex=False)  # Remplace les virgules par des points
+                paypal_data[col] = pd.to_numeric(paypal_data[col], errors='coerce').fillna(0)  # Convertit en float et remplace NaN par 0
 
+            # Initialiser les listes pour construire les lignes
             lines = []
             inconnues = []
 
+            # Mapper les colonnes nécessaires entre les deux fichiers
             for index, row in paypal_data.iterrows():
                 type_lig = ""
                 journal = "53"
-                date = row['Date']
+                date = row['Date']  # Colonne Date fichier Paypal
                 piece = ""
-                ligne = str(index + 1)
+                ligne = str(index + 1)  # N° ligne (indentation)
                 type_cpt = "C"
 
+                # ---- NOUVEAU CONTRÔLE ----
                 reference_facture = ""
                 if pd.notna(row['Numéro de client']) and row['Numéro de client'].strip() != "":
+                    # Extraire le numéro après '--' dans la colonne 'Titre de l'objet'
                     titre_objet = row.get('Titre de l\'objet', '')
                     if '--' in titre_objet:
                         reference_facture = titre_objet.split('--')[-1].strip()
                 else:
+                    # Utiliser la colonne "Numéro de facture" si pas de client
                     reference_facture = row['Numéro de facture']
 
+                # Trouver le compte dans le fichier export
                 compte_row = export_data[export_data['N° commande'] == reference_facture]
                 if not compte_row.empty and compte_row['Code Mistral'].values[0] and compte_row['Code Mistral'].values[0] != "0":
                     compte = compte_row['Code Mistral'].values[0]
@@ -87,9 +87,9 @@ else:
                     compte = "1"
                     inconnues.append(row)
 
-                reference = reference_facture
-                libelle = f"Règlement {row['Nom'].upper()}"
-                montant = f"{row['Avant commission']:.2f}".replace(".", ",")
+                reference = reference_facture  # Numéro de commande
+                libelle = f"Règlement {row['Nom'].upper()}"  # Concaténation avec Nom en majuscules
+                montant = f"{row['Avant commission']:.2f}".replace(".", ",")  # Format en virgule
                 sens = "C"
                 d_eche = ""
                 paiement = ""
@@ -97,40 +97,37 @@ else:
                 devise = ""
                 post_analytique = ""
 
+                # Ajouter la ligne principale
                 lines.append([
                     type_lig, journal, date, piece, ligne, type_cpt, compte, reference, libelle,
                     montant, sens, d_eche, paiement, tva, devise, post_analytique
                 ])
 
-            # Ligne "frais"
-            commission_sum = paypal_data['Commission'].sum() * -1
+            # Ajouter la ligne "frais"
+            commission_sum = paypal_data['Commission'].sum() * -1  # Passer en positif et formater
             lines.append([
                 "", "53", date, "", str(len(lines) + 1), "G", "627831", date, "Règlement PAYPAL",
                 f"{commission_sum:.2f}".replace(".", ","), "D", "", "", "", "", ""
             ])
 
-            # Ligne "total"
-            net_sum = paypal_data['Net'].sum()
+            # Ajouter la ligne "total"
+            net_sum = paypal_data['Net'].sum()  # Formater
             lines.append([
                 "", "53", date, "", str(len(lines) + 1), "G", "512102", date, "Règlement PAYPAL",
                 f"{net_sum:.2f}".replace(".", ","), "D", "", "", "", "", ""
             ])
 
+            # Créer un DataFrame final
             columns = [
                 "Type Lig", "Journal", "Date", "Pièce", "Ligne", "Type Cpt", "Compte", "Référence",
                 "Libellé", "Montant", "Sens", "D.Eché", "Paiement", "TVA", "Devise", "Post analytique"
             ]
             output_df = pd.DataFrame(lines, columns=columns)
-
-            # ✅ Nettoyage des caractères non latin-1
-            output_df = output_df.applymap(clean_latin1)
-
-            # 📦 Écriture du CSV latin-1
             output_csv = BytesIO()
             output_df.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
             output_csv.seek(0)
 
-            # Commandes inconnues
+            # Gérer les commandes inconnues
             inconnues_csv = BytesIO()
             if inconnues:
                 inconnues_df = pd.DataFrame(inconnues)
@@ -139,11 +136,11 @@ else:
                 inconnues_csv.write(b"Aucune commande inconnue")
             inconnues_csv.seek(0)
 
-            # Stockage dans session
+            # Stocker les fichiers dans session_state
             st.session_state["output_csv"] = output_csv
             st.session_state["inconnues_csv"] = inconnues_csv
 
-# Téléchargement
+    # Afficher les boutons de téléchargement uniquement si les fichiers sont disponibles
 if "output_csv" in st.session_state and "inconnues_csv" in st.session_state:
     st.header("Téléchargement des fichiers")
     st.download_button(
