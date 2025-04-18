@@ -2,6 +2,13 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
+# 🔧 Fonction de nettoyage des chaînes incompatibles avec latin-1
+def clean_latin1(s):
+    """Supprime les caractères non compatibles avec latin-1 (ISO-8859-1)."""
+    if isinstance(s, str):
+        return s.encode("latin-1", errors="ignore").decode("latin-1")
+    return s
+
 # Fonction de callback pour la connexion
 def login_callback():
     if st.session_state.username == "paypal.aprolia" and st.session_state.password == "2025#Aprolia79!":
