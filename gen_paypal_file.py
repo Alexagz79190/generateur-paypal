@@ -2,14 +2,12 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-# 🔧 Nettoyage ultime des caractères non supportés par latin-1
-def full_clean_latin1(df):
-    def clean_cell(cell):
-        try:
-            return str(cell).encode("latin-1", errors="ignore").decode("latin-1")
-        except Exception:
-            return ""
-    return df.applymap(clean_cell)
+# 🔧 Fonction de nettoyage des chaînes incompatibles avec latin-1
+def clean_latin1(s):
+    """Supprime les caractères non compatibles avec latin-1 (ISO-8859-1)."""
+    if isinstance(s, str):
+        return s.encode("latin-1", errors="ignore").decode("latin-1")
+    return s
 
 # Fonction de callback pour la connexion
 def login_callback():
@@ -33,8 +31,10 @@ if "authenticated" not in st.session_state:
 if not st.session_state.authenticated:
     login_page()
 else:
+    # Titre de l'application
     st.title("Générateur d'écritures PayPal")
 
+    # Chargement des fichiers
     st.header("Chargement des fichiers")
     paypal_file = st.file_uploader("Importer le fichier PayPal (CSV)", type=["csv"])
     export_file = st.file_uploader("Importer le fichier Export (XLSX)", type=["xlsx"])
@@ -42,15 +42,20 @@ else:
     generate_button = st.button("Générer les fichiers")
 
     if generate_button and paypal_file and export_file:
+        # Lire les données
         paypal_data = pd.read_csv(paypal_file, sep=",", dtype=str)
+
+        # Filtrer uniquement les lignes où 'Type' est égal à 'Paiement Express Checkout'
         paypal_data = paypal_data[paypal_data['Type'] == 'Paiement Express Checkout']
 
         if paypal_data.empty:
             st.error("Aucune transaction de type 'Paiement Express Checkout' trouvée dans le fichier PayPal.")
         else:
-            export_data = pd.read_excel(export_file, dtype=str, skiprows=1)
+            export_data = pd.read_excel(export_file, dtype=str, skiprows=1)  # Ignorer la première ligne
 
+            # Colonnes à nettoyer
             columns_to_clean = ['Avant commission', 'Commission', 'Net']
+
             for col in columns_to_clean:
                 paypal_data[col] = paypal_data[col].astype(str).str.replace("\xa0", "", regex=False)
                 paypal_data[col] = paypal_data[col].str.replace(",", ".", regex=False)
@@ -97,12 +102,14 @@ else:
                     montant, sens, d_eche, paiement, tva, devise, post_analytique
                 ])
 
+            # Ligne "frais"
             commission_sum = paypal_data['Commission'].sum() * -1
             lines.append([
                 "", "53", date, "", str(len(lines) + 1), "G", "627831", date, "Règlement PAYPAL",
                 f"{commission_sum:.2f}".replace(".", ","), "D", "", "", "", "", ""
             ])
 
+            # Ligne "total"
             net_sum = paypal_data['Net'].sum()
             lines.append([
                 "", "53", date, "", str(len(lines) + 1), "G", "512102", date, "Règlement PAYPAL",
@@ -115,26 +122,28 @@ else:
             ]
             output_df = pd.DataFrame(lines, columns=columns)
 
-            # ✅ Nettoyage ultime avant export
-            output_df = full_clean_latin1(output_df)
+            # ✅ Nettoyage des caractères non latin-1
+            output_df = output_df.applymap(clean_latin1)
 
+            # 📦 Écriture du CSV latin-1
             output_csv = BytesIO()
             output_df.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
             output_csv.seek(0)
 
+            # Commandes inconnues
             inconnues_csv = BytesIO()
             if inconnues:
                 inconnues_df = pd.DataFrame(inconnues)
-                inconnues_df = full_clean_latin1(inconnues_df)
                 inconnues_df.to_csv(inconnues_csv, sep=";", index=False, encoding="utf-8-sig")
             else:
                 inconnues_csv.write(b"Aucune commande inconnue")
             inconnues_csv.seek(0)
 
+            # Stockage dans session
             st.session_state["output_csv"] = output_csv
             st.session_state["inconnues_csv"] = inconnues_csv
 
-# Interface de téléchargement
+# Téléchargement
 if "output_csv" in st.session_state and "inconnues_csv" in st.session_state:
     st.header("Téléchargement des fichiers")
     st.download_button(
