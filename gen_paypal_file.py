@@ -122,12 +122,20 @@ else:
             ]
             output_df = pd.DataFrame(lines, columns=columns)
 
-            # ✅ Nettoyage des caractères non latin-1
+            # 🔁 Forcer le DataFrame en chaîne de caractères
+            output_df = output_df.astype(str)
+
+            # 🔧 Nettoyer tous les caractères non latin-1
             output_df = output_df.applymap(clean_latin1)
 
-            # 📦 Écriture du CSV latin-1
+            # 📝 Export vers CSV (latin-1 sécurisé)
             output_csv = BytesIO()
-            output_df.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
+            try:
+                output_df.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
+            except UnicodeEncodeError as e:
+                st.error("❌ Une erreur d'encodage a été détectée malgré le nettoyage.")
+                st.text(f"Détail : {e}")
+                st.stop()
             output_csv.seek(0)
 
             # Commandes inconnues
