@@ -127,8 +127,12 @@ else:
             ]
             output_df = pd.DataFrame(lines, columns=columns)
 
-            # 🔁 Nettoyage final (sécurité)
+           # Tu viens de créer output_df ici
+            output_df = pd.DataFrame(lines, columns=columns)
+
+            # 🔧 Applique normalize_text cellule par cellule
             output_df = output_df.applymap(normalize_text)
+
 
             output_csv = BytesIO()
             output_df.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
