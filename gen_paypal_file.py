@@ -2,23 +2,14 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-# 🔧 Remplacement intelligent des caractères problématiques
-UNICODE_REPLACEMENTS = {
-    '\u0116': 'E',   # Ė
-    '\u20AC': 'EUR', # €
-    '\u2019': "'",   # apostrophe courbe
-    '\u201C': '"',   # guillemets ouvrants
-    '\u201D': '"',   # guillemets fermants
-}
-
-def normalize_text(text):
-    if pd.isna(text):
-        return ""
-    text = str(text)
-    for char, replacement in UNICODE_REPLACEMENTS.items():
-        text = text.replace(char, replacement)
-    # Nettoyage final (sécurité) : enlever tout caractère non latin-1 restant
-    return text.encode("latin-1", errors="ignore").decode("latin-1")
+# 🔧 Nettoyage ultime des caractères non supportés par latin-1
+def full_clean_latin1(df):
+    def clean_cell(cell):
+        try:
+            return str(cell).encode("latin-1", errors="ignore").decode("latin-1")
+        except Exception:
+            return ""
+    return df.applymap(clean_cell)
 
 # Fonction de callback pour la connexion
 def login_callback():
@@ -51,16 +42,13 @@ else:
     generate_button = st.button("Générer les fichiers")
 
     if generate_button and paypal_file and export_file:
-        # 🔁 Lecture + nettoyage des caractères spéciaux à l'import
         paypal_data = pd.read_csv(paypal_file, sep=",", dtype=str)
-        paypal_data = paypal_data.applymap(normalize_text)
         paypal_data = paypal_data[paypal_data['Type'] == 'Paiement Express Checkout']
 
         if paypal_data.empty:
             st.error("Aucune transaction de type 'Paiement Express Checkout' trouvée dans le fichier PayPal.")
         else:
             export_data = pd.read_excel(export_file, dtype=str, skiprows=1)
-            export_data = export_data.applymap(normalize_text)
 
             columns_to_clean = ['Avant commission', 'Commission', 'Net']
             for col in columns_to_clean:
@@ -127,16 +115,8 @@ else:
             ]
             output_df = pd.DataFrame(lines, columns=columns)
 
-            # ✅ Remplacement universel de tous les caractères problématiques dans output_df
-            output_df = output_df.astype(str).replace({'Ė': 'E'}, regex=True)
-
-
-           # Tu viens de créer output_df ici
-            output_df = pd.DataFrame(lines, columns=columns)
-
-            # 🔧 Applique normalize_text cellule par cellule
-            output_df = output_df.applymap(normalize_text)
-
+            # ✅ Nettoyage ultime avant export
+            output_df = full_clean_latin1(output_df)
 
             output_csv = BytesIO()
             output_df.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
@@ -145,7 +125,7 @@ else:
             inconnues_csv = BytesIO()
             if inconnues:
                 inconnues_df = pd.DataFrame(inconnues)
-                inconnues_df = inconnues_df.applymap(normalize_text)
+                inconnues_df = full_clean_latin1(inconnues_df)
                 inconnues_df.to_csv(inconnues_csv, sep=";", index=False, encoding="utf-8-sig")
             else:
                 inconnues_csv.write(b"Aucune commande inconnue")
@@ -154,7 +134,7 @@ else:
             st.session_state["output_csv"] = output_csv
             st.session_state["inconnues_csv"] = inconnues_csv
 
-# Téléchargement des fichiers
+# Interface de téléchargement
 if "output_csv" in st.session_state and "inconnues_csv" in st.session_state:
     st.header("Téléchargement des fichiers")
     st.download_button(
