@@ -2,6 +2,12 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
+# ⛑ PATCH contre l'erreur StreamlitAPIException sur file_uploader
+for key in list(st.session_state.keys()):
+    if "file_uploader" in key:
+        del st.session_state[key]
+
+
 # ------------------------------
 # Connexion
 # ------------------------------
