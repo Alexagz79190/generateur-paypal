@@ -29,7 +29,7 @@ else:
 
     # Chargement des fichiers
     st.header("Chargement des fichiers")
-    paypal_file = st.file_uploader("Importer le fichier PayPal (CSV)", type=["csv"])
+    paypal_file = st.file_uploader("Importer le fichier PayPal (CSV)", type=["csv", "CSV"])
     export_file = st.file_uploader("Importer le fichier Export (XLSX)", type=["xlsx"])
 
     generate_button = st.button("Générer les fichiers")
