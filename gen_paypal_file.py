@@ -42,9 +42,18 @@ else:
             del st.session_state[key]
 
 
-    paypal_file = st.file_uploader("Importer le fichier PayPal (CSV)", type=["csv", "CSV"])
-    export_file = st.file_uploader("Importer le fichier Export (XLSX)", type=["xlsx"])
+    paypal_file = st.file_uploader("Importer le fichier PayPal (CSV)")
+    export_file = st.file_uploader("Importer le fichier Export (XLSX)")
     generate_button = st.button("Générer les fichiers")
+
+    if paypal_file and not paypal_file.name.lower().endswith(".csv"):
+        st.error("Le fichier PayPal doit avoir l'extension .csv.")
+        paypal_file = None
+
+    if export_file and not export_file.name.lower().endswith(".xlsx"):
+        st.error("Le fichier Export doit être un fichier Excel (.xlsx).")
+        export_file = None
+
 
     if generate_button and paypal_file and export_file:
         # Vérification de l’extension CSV
