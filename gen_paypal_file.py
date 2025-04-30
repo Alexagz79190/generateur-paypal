@@ -30,6 +30,12 @@ else:
     st.title("Générateur d'écritures PayPal")
     st.header("Chargement des fichiers")
 
+    # Nettoyer les objets file_uploader invalides dans la session
+    for key in list(st.session_state.keys()):
+        if key.startswith("file_uploader") and not isinstance(st.session_state.get(key), BytesIO):
+            del st.session_state[key]
+
+
     paypal_file = st.file_uploader("Importer le fichier PayPal (CSV)", type=["csv", "CSV"])
     export_file = st.file_uploader("Importer le fichier Export (XLSX)", type=["xlsx"])
     generate_button = st.button("Générer les fichiers")
