@@ -136,8 +136,15 @@ else:
                 ]
                 output_df = pd.DataFrame(lines, columns=columns)
                 output_csv = BytesIO()
-                output_df.to_csv(output_csv, sep=";", index=False, encoding="latin-1")
+                output_df.to_csv(
+                    output_csv,
+                    sep=";",
+                    index=False,
+                    encoding="latin-1",
+                    errors="replace"   # <-- ici on remplace ou ignore selon votre choix
+                )
                 output_csv.seek(0)
+
 
                 # Fichier des commandes inconnues
                 inconnues_csv = BytesIO()
