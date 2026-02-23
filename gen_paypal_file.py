@@ -72,6 +72,7 @@ else:
                 for col in columns_to_clean:
                     paypal_data[col] = paypal_data[col].astype(str)\
                         .str.replace("\xa0", "", regex=False)\
+                        .str.replace(" ", "", regex=False)\
                         .str.replace(",", ".", regex=False)
                     paypal_data[col] = pd.to_numeric(paypal_data[col], errors='coerce').fillna(0)
 
