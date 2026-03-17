@@ -72,8 +72,15 @@ else:
                 export_preview["Date de validation"].dropna().unique().tolist(),
                 reverse=True
             )
+            # On garde uniquement la partie avant le " - " pour regrouper les modes
             paiements_dispos = sorted(
-                export_preview["Paiement"].dropna().unique().tolist()
+                export_preview["Paiement"]
+                .dropna()
+                .str.split(" - ")
+                .str[0]
+                .str.strip()
+                .unique()
+                .tolist()
             )
         except Exception:
             dates_dispo = []
