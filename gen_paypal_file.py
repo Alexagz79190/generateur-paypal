@@ -37,14 +37,12 @@ else:
     st.title("Générateur d'écritures PayPal")
     st.header("Chargement des fichiers")
 
-    # Nettoyer les objets file_uploader invalides dans la session
     for key in list(st.session_state.keys()):
         if key.startswith("file_uploader") and not isinstance(st.session_state.get(key), BytesIO):
             del st.session_state[key]
 
     paypal_file = st.file_uploader("Importer le fichier PayPal (CSV)")
     export_file = st.file_uploader("Importer le fichier Export (CSV)")
-    generate_button = st.button("Générer les fichiers")
 
     if paypal_file and not paypal_file.name.lower().endswith(".csv"):
         st.error("Le fichier PayPal doit avoir l'extension .csv.")
@@ -54,60 +52,138 @@ else:
         st.error("Le fichier Export doit être au format CSV (.csv).")
         export_file = None
 
+    # --------------------------------------------------
+    # Filtres modifiables — affichés dès que l'Export est chargé
+    # --------------------------------------------------
+    date_filtre = (datetime.today() - timedelta(days=1)).strftime("%d/%m/%Y")
+    paiement_filtre = "Paypal adyen"
+
+    if export_file:
+        st.divider()
+        st.subheader("🔧 Filtres de sélection")
+
+        # Lecture rapide pour extraire les valeurs disponibles
+        try:
+            export_preview = pd.read_csv(export_file, sep=",", dtype=str)
+            export_preview.columns = export_preview.columns.str.strip()
+            export_file.seek(0)  # rembobiner pour la lecture définitive plus tard
+
+            dates_dispo = sorted(
+                export_preview["Date de validation"].dropna().unique().tolist(),
+                reverse=True
+            )
+            paiements_dispos = sorted(
+                export_preview["Paiement"].dropna().unique().tolist()
+            )
+        except Exception:
+            dates_dispo = []
+            paiements_dispos = []
+
+        hier_str = (datetime.today() - timedelta(days=1)).strftime("%d/%m/%Y")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("**📅 Date de validation**")
+            if dates_dispo:
+                default_date_idx = dates_dispo.index(hier_str) if hier_str in dates_dispo else 0
+                date_selectionnee = st.selectbox(
+                    "Choisir parmi les dates du fichier",
+                    options=dates_dispo,
+                    index=default_date_idx,
+                    key="date_select"
+                )
+            else:
+                date_selectionnee = hier_str
+                st.info(f"Date par défaut : {hier_str}")
+
+            date_manuelle = st.text_input(
+                "✏️ Ou saisir manuellement (JJ/MM/AAAA)",
+                value="",
+                placeholder="ex : 15/03/2026 — laissez vide pour utiliser la sélection",
+                key="date_manuelle"
+            )
+            date_filtre = date_manuelle.strip() if date_manuelle.strip() else date_selectionnee
+            st.caption(f"✅ Date retenue : **{date_filtre}**")
+
+        with col2:
+            st.markdown("**💳 Mode de paiement**")
+            if paiements_dispos:
+                default_pay_idx = next(
+                    (i for i, p in enumerate(paiements_dispos) if "paypal adyen" in p.lower()),
+                    0
+                )
+                paiement_selectionne = st.selectbox(
+                    "Choisir parmi les modes du fichier",
+                    options=paiements_dispos,
+                    index=default_pay_idx,
+                    key="paiement_select"
+                )
+            else:
+                paiement_selectionne = "Paypal adyen"
+                st.info("Mode par défaut : Paypal adyen")
+
+            paiement_manuel = st.text_input(
+                "✏️ Ou saisir manuellement",
+                value="",
+                placeholder="ex : Paypal adyen — laissez vide pour utiliser la sélection",
+                key="paiement_manuel"
+            )
+            paiement_filtre = paiement_manuel.strip() if paiement_manuel.strip() else paiement_selectionne
+            st.caption(f"✅ Paiement retenu : **{paiement_filtre}**")
+
+        st.divider()
+
+    generate_button = st.button("Générer les fichiers", type="primary")
+
+    # --------------------------------------------------
+    # Génération
+    # --------------------------------------------------
     if generate_button and paypal_file and export_file:
 
-        # --- Chargement fichier PayPal ---
         paypal_data = pd.read_csv(paypal_file, sep=",", dtype=str)
         paypal_data = paypal_data[paypal_data['Type'] == 'Paiement Express Checkout']
 
         if paypal_data.empty:
             st.error("Aucune transaction de type 'Paiement Express Checkout' trouvée.")
         else:
-            # --- Chargement fichier Export (nouveau format CSV) ---
             export_data = pd.read_csv(export_file, sep=",", dtype=str)
-
-            # Nettoyage des noms de colonnes (espaces éventuels)
             export_data.columns = export_data.columns.str.strip()
 
-            # --------------------------------------------------
-            # FILTRE 1 : Date de validation = veille
-            # --------------------------------------------------
-            hier = (datetime.today() - timedelta(days=1)).strftime("%d/%m/%Y")
+            # Filtre Date
             export_data["Date de validation"] = export_data["Date de validation"].astype(str).str.strip()
-            export_filtered = export_data[export_data["Date de validation"] == hier].copy()
+            export_filtered = export_data[export_data["Date de validation"] == date_filtre].copy()
 
             nb_total = len(export_data)
             nb_apres_date = len(export_filtered)
 
             if export_filtered.empty:
                 st.warning(
-                    f"⚠️ Aucune commande avec une date de validation à la veille ({hier}) "
-                    f"trouvée dans le fichier Export ({nb_total} lignes au total). "
-                    "Vérifiez la date ou le contenu du fichier."
+                    f"⚠️ Aucune commande avec la date **{date_filtre}** "
+                    f"trouvée ({nb_total} lignes au total)."
                 )
             else:
-                # --------------------------------------------------
-                # FILTRE 2 : Paiement contenant "Paypal adyen"
-                # --------------------------------------------------
+                # Filtre Paiement
                 export_filtered = export_filtered[
-                    export_filtered["Paiement"].astype(str).str.contains("Paypal adyen", case=False, na=False)
+                    export_filtered["Paiement"].astype(str).str.contains(
+                        paiement_filtre, case=False, na=False
+                    )
                 ].copy()
 
                 nb_apres_paypal = len(export_filtered)
 
                 st.info(
                     f"📋 Export : {nb_total} lignes totales → "
-                    f"{nb_apres_date} à la date du {hier} → "
-                    f"**{nb_apres_paypal} lignes Paypal adyen** retenues."
+                    f"{nb_apres_date} à la date du {date_filtre} → "
+                    f"**{nb_apres_paypal} lignes « {paiement_filtre} »** retenues."
                 )
 
                 if export_filtered.empty:
                     st.warning(
-                        "⚠️ Aucune commande 'Paypal adyen' trouvée pour la date du veille. "
-                        "Vérifiez le contenu de la colonne 'Paiement'."
+                        f"⚠️ Aucune commande « {paiement_filtre} » trouvée pour le {date_filtre}."
                     )
                 else:
-                    # --- Nettoyage colonnes montants PayPal ---
+                    # Nettoyage colonnes montants PayPal
                     columns_to_clean = ['Avant commission', 'Commission', 'Net']
                     for col in columns_to_clean:
                         paypal_data[col] = (
@@ -136,7 +212,7 @@ else:
                         else:
                             reference_facture = row['Numéro de facture']
 
-                        # Recherche du compte Mistral dans le fichier Export filtré
+                        # Recherche du compte Mistral
                         compte_row = export_filtered[
                             export_filtered['N° commande'].astype(str).str.strip() == reference_facture
                         ]
@@ -155,7 +231,6 @@ else:
                         montant = f"{row['Avant commission']:.2f}".replace(".", ",")
                         sens = "C"
 
-                        # Ligne principale
                         lines.append([
                             type_lig, journal, date, piece, ligne, type_cpt, compte, reference,
                             libelle, montant, sens, "", "", "", "", ""
@@ -177,7 +252,6 @@ else:
                         "", "", "", "", ""
                     ])
 
-                    # Génération du fichier d'écriture
                     columns = [
                         "Type Lig", "Journal", "Date", "Pièce", "Ligne", "Type Cpt",
                         "Compte", "Référence", "Libellé", "Montant", "Sens",
@@ -186,15 +260,10 @@ else:
                     output_df = pd.DataFrame(lines, columns=columns)
                     output_csv = BytesIO()
                     output_df.to_csv(
-                        output_csv,
-                        sep=";",
-                        index=False,
-                        encoding="latin-1",
-                        errors="replace"
+                        output_csv, sep=";", index=False, encoding="latin-1", errors="replace"
                     )
                     output_csv.seek(0)
 
-                    # Fichier des commandes inconnues
                     inconnues_csv = BytesIO()
                     if inconnues:
                         pd.DataFrame(inconnues).to_csv(
@@ -206,6 +275,9 @@ else:
 
                     st.session_state["output_csv"] = output_csv
                     st.session_state["inconnues_csv"] = inconnues_csv
+
+    elif generate_button and not (paypal_file and export_file):
+        st.warning("⚠️ Veuillez charger les deux fichiers avant de générer.")
 
     # ------------------------------
     # Téléchargements
