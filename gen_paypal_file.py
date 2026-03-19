@@ -213,7 +213,7 @@ else:
                         # Référence facture
                         reference_facture = ""
                         if pd.notna(row['Numéro de client']) and row['Numéro de client'].strip():
-                            titre_objet = row.get("Titre de l'objet", "")
+                            titre_objet = row.get("Objet", "")
                             if '--' in titre_objet:
                                 reference_facture = titre_objet.split('--')[-1].strip()
                         else:
