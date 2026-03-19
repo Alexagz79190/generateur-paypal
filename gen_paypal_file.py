@@ -216,22 +216,29 @@ else:
                             titre_objet = row.get("Objet", "")
                             if '--' in titre_objet:
                                 reference_facture = titre_objet.split('--')[-1].strip()
+                            else:
+                                reference_facture = row['Numéro de facture']  # fallback si pas de '--'
                         else:
                             reference_facture = row['Numéro de facture']
 
-                        # Recherche du compte Mistral
+                        # ✅ PATCH — Recherche du compte Mistral
+                        # Une commande est "inconnue" UNIQUEMENT si absente de l'export,
+                        # pas si son code Mistral est simplement vide.
                         compte_row = export_filtered[
                             export_filtered['N° commande'].astype(str).str.strip() == reference_facture
                         ]
-                        compte = (
-                            compte_row['Code mistral'].values[0]
-                            if not compte_row.empty
-                            and compte_row['Code mistral'].values[0]
-                            and compte_row['Code mistral'].values[0] not in ("0", "nan", "")
-                            else "1"
-                        )
-                        if compte == "1":
+
+                        if compte_row.empty:
+                            # Commande introuvable dans l'export → vraiment inconnue
+                            compte = "1"
                             inconnues.append(row)
+                        else:
+                            code = compte_row['Code mistral'].values[0]
+                            if code and code not in ("0", "nan", ""):
+                                compte = code
+                            else:
+                                # Trouvée mais sans code Mistral → on met "1" sans la mettre en inconnue
+                                compte = "1"
 
                         reference = reference_facture
                         libelle = f"Règlement {row['Nom'].upper()}"
