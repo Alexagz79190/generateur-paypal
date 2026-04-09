@@ -68,11 +68,16 @@ else:
             export_preview.columns = export_preview.columns.str.strip()
             export_file.seek(0)  # rembobiner pour la lecture définitive plus tard
 
-            dates_dispo = sorted(
-                export_preview["Date de validation"].dropna().unique().tolist(),
-                key=lambda d: datetime.strptime(d, "%d/%m/%Y"),
-                reverse=True
-            )
+            raw_dates = export_preview["Date de validation"].dropna().unique().tolist()
+            try:
+                dates_dispo = sorted(
+                    raw_dates,
+                    key=lambda d: datetime.strptime(d.strip(), "%d/%m/%Y"),
+                    reverse=True
+                )
+            except Exception:
+                dates_dispo = sorted(raw_dates, reverse=True)
+                
             # On garde uniquement la partie avant le " - " pour regrouper les modes
             paiements_dispos = sorted(
                 export_preview["Paiement"]
