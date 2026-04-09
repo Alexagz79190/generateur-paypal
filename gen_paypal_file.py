@@ -63,31 +63,20 @@ else:
         st.subheader("🔧 Filtres de sélection")
 
         # Lecture rapide pour extraire les valeurs disponibles
-        def parse_date_fr(d):
-            try:
-                return datetime.strptime(d.strip(), "%d/%m/%Y")
-            except Exception:
-                return datetime.min
-        
-        raw_dates = export_preview["Date de validation"].dropna().unique().tolist()
-        dates_dispo = sorted(raw_dates, key=parse_date_fr, reverse=True)
-        
         try:
             export_preview = pd.read_csv(export_file, sep=",", dtype=str)
             export_preview.columns = export_preview.columns.str.strip()
-            export_file.seek(0)  # rembobiner pour la lecture définitive plus tard
-
+            export_file.seek(0)
+        
+            def parse_date_fr(d):
+                try:
+                    return datetime.strptime(d.strip(), "%d/%m/%Y")
+                except Exception:
+                    return datetime.min
+        
             raw_dates = export_preview["Date de validation"].dropna().unique().tolist()
-            try:
-                dates_dispo = sorted(
-                    raw_dates,
-                    key=lambda d: datetime.strptime(d.strip(), "%d/%m/%Y"),
-                    reverse=True
-                )
-            except Exception:
-                dates_dispo = sorted(raw_dates, reverse=True)
-                
-            # On garde uniquement la partie avant le " - " pour regrouper les modes
+            dates_dispo = sorted(raw_dates, key=parse_date_fr, reverse=True)
+        
             paiements_dispos = sorted(
                 export_preview["Paiement"]
                 .dropna()
