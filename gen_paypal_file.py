@@ -70,6 +70,7 @@ else:
 
             dates_dispo = sorted(
                 export_preview["Date de validation"].dropna().unique().tolist(),
+                key=lambda d: datetime.strptime(d, "%d/%m/%Y"),
                 reverse=True
             )
             # On garde uniquement la partie avant le " - " pour regrouper les modes
