@@ -13,20 +13,26 @@ for key in list(st.session_state.keys()):
 # Connexion
 # ------------------------------
 def login_callback():
-    if st.session_state.username == "paypal.aprolia" and st.session_state.password == "2025#Aprolia79!":
+    username = st.session_state.get("username", "")
+    password = st.session_state.get("password", "")
+    if (username == st.secrets["credentials"]["username"] and 
+        password == st.secrets["credentials"]["password"]):
         st.session_state.authenticated = True
     else:
         st.session_state.authenticated = False
-        st.error("Nom d'utilisateur ou mot de passe incorrect")
+        st.session_state.login_error = True
 
 def login_page():
     st.title("Connexion")
     st.text_input("Nom d'utilisateur", key="username")
     st.text_input("Mot de passe", type="password", key="password")
     st.button("Se connecter", on_click=login_callback)
+    if st.session_state.get("login_error"):
+        st.error("Nom d'utilisateur ou mot de passe incorrect")
 
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
+    st.session_state.login_error = False
 
 if not st.session_state.authenticated:
     login_page()
